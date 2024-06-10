@@ -28,7 +28,7 @@ class CnyesNewsSpider:
                 filtered_news.append(news)
         return filtered_news
 
-def fetch_latest_news_message(keywords, limit=10):
+def fetch_and_filter_news_message(keywords, limit=10):
     cnyes_news_spider = CnyesNewsSpider()
     latest_news = cnyes_news_spider.get_latest_news(limit=limit)
     print(f"Latest News: {latest_news}")  # 檢查最新新聞
