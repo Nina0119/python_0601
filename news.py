@@ -30,37 +30,24 @@ class CnyesNewsSpider:
                 filtered_news.append(news)
         return filtered_news
 
-def fetch_and_filter_news_message(keywords, pages=5, limit=5):
+from linebot.models import TextSendMessage
+
+def fetch_and_filter_news_message(keywords, pages=30, limit=30):
     cnyes_news_spider = CnyesNewsSpider()
     newslist_info = cnyes_news_spider.get_newslist_info(pages=pages, limit=limit)
-    
+    print("API Response:", newslist_info)  # 檢查 API 響應
+
     if newslist_info:
         filtered_news = cnyes_news_spider.filter_news(newslist_info, keywords)
+        print("Filtered News:", filtered_news)  # 檢查過濾後的新聞
         print(f'搜尋結果 > 符合條件的新聞總數：{len(filtered_news)}')
-        
-        columns = []
-        for news in filtered_news[:10]:  # 只显示最多10条新闻
-            column = ImageCarouselColumn(
-                image_url="https://via.placeholder.com/300",  # 这里应该使用新闻的图片URL
-                action=URITemplateAction(
-                    label=news["title"],
-                    uri=f"https://news.cnyes.com/news/id/{news['newsId']}"
-                )
-            )
-            columns.append(column)
-        
-        message = TemplateSendMessage(
-            alt_text='新聞旋轉木馬',
-            template=ImageCarouselTemplate(columns=columns)
-        )
+
+        # 構建新聞列表消息
+        news_list_text = "最新新聞：\n\n"
+        for index, news in enumerate(filtered_news[:10], 1):  # 只顯示最多10條新聞
+            news_list_text += f"{index}. {news['title']}\n"
+            news_list_text += f"   連結：https://news.cnyes.com/news/id/{news['newsId']}\n\n"
+
+        message = TextSendMessage(text=news_list_text.strip())
         return message
     return None
-
-# Example of usage
-if __name__ == "__main__":
-    keywords = ["ETF", "股票", "殖利率"]
-    message = fetch_and_filter_news_message(keywords, pages=5, limit=5)
-    if message:
-        print(message)
-    else:
-        print("No news found.")
