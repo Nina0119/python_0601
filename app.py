@@ -62,7 +62,7 @@ def handle_message(event):
         message = Carousel_Template()
         line_bot_api.reply_message(event.reply_token, message)
     elif 'ETF新聞' in msg:
-        message = fetch_and_filter_news_message()
+        message = fetch_and_filter_news_message('ETF', pages=5, limit=5)
         line_bot_api.reply_message(event.reply_token, message)
     elif '功能列表' in msg:
         message = function_list()
