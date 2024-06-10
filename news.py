@@ -30,7 +30,7 @@ class CnyesNewsSpider:
                 filtered_news.append(news)
         return filtered_news
 
-def fetch_and_filter_news_message(keywords, pages=5, limit=5):
+def fetch_and_filter_news_message(ETF, pages=5, limit=5):
     cnyes_news_spider = CnyesNewsSpider()
     newslist_info = cnyes_news_spider.get_newslist_info(pages=pages, limit=limit)
     
