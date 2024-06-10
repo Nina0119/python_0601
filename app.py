@@ -11,7 +11,7 @@ from linebot.models import *
 
 #======這裡是呼叫的檔案內容=====
 from message import *
-from new import *
+from news import *
 from Function import *
 #======這裡是呼叫的檔案內容=====
 
@@ -61,8 +61,8 @@ def handle_message(event):
     elif '旋轉木馬' in msg:
         message = Carousel_Template()
         line_bot_api.reply_message(event.reply_token, message)
-    elif '圖片畫廊' in msg:
-        message = test()
+    elif 'ETF 新聞' in msg:
+        message = fetch_and_filter_news_message()
         line_bot_api.reply_message(event.reply_token, message)
     elif '功能列表' in msg:
         message = function_list()
