@@ -1,53 +1,54 @@
 #NewsSendMessage(新聞訊息)
-import time
 import requests
-from linebot.models import (
-    TemplateSendMessage, ImageCarouselTemplate, ImageCarouselColumn, URITemplateAction
-)
+from linebot.models import TextSendMessage
 
 class CnyesNewsSpider:
-    
-    def get_newslist_info(self, pages=5, limit=5):
+    def get_latest_news(self, limit=10):
         headers = {
             'Origin': 'https://news.cnyes.com/',
             'Referer': 'https://news.cnyes.com/',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         }
-        all_newslist_info = {'data': []}
-        for page in range(1, pages + 1):
-            r = requests.get(f"https://api.cnyes.com/media/api/v1/newslist/category/headline?page={page}&limit={limit}", headers=headers)
-            if r.status_code != requests.codes.ok:
-                print(f'請求第 {page} 頁失敗', r.status_code)
-                continue
-            newslist_info = r.json()['items']
-            all_newslist_info['data'].extend(newslist_info['data'])
-        return all_newslist_info
+        try:
+            r = requests.get(f"https://api.cnyes.com/media/api/v1/newslist/category/headline?page=1&limit={limit}", headers=headers, timeout=10)
+            r.raise_for_status()  # 如果響應不是200，這將拋出異常
+            data = r.json()
+            print(f"API Response: {data}")  # 打印整個響應，查看結構
+            return data.get('items', {}).get('data', [])
+        except requests.RequestException as e:
+            print(f"請求新聞失敗: {e}")
+        except ValueError as e:
+            print(f"解析 JSON 失敗: {e}")
+        return []
 
-    def filter_news(self, newslist_info, keywords):
+    def filter_news(self, newslist, keywords):
         filtered_news = []
-        for news in newslist_info["data"]:
-            if any(keyword in news["keyword"] for keyword in keywords):
+        for news in newslist:
+            if any(keyword.lower() in news.get("title", "").lower() for keyword in keywords):
                 filtered_news.append(news)
         return filtered_news
 
-from linebot.models import TextSendMessage
-
-def fetch_and_filter_news_message(keywords, pages=30, limit=30):
+def fetch_latest_news_message(keywords, limit=10):
     cnyes_news_spider = CnyesNewsSpider()
-    newslist_info = cnyes_news_spider.get_newslist_info(pages=pages, limit=limit)
-    print("API Response:", newslist_info)  # 檢查 API 響應
+    latest_news = cnyes_news_spider.get_latest_news(limit=limit)
+    print(f"Latest News: {latest_news}")  # 檢查最新新聞
 
-    if newslist_info:
-        filtered_news = cnyes_news_spider.filter_news(newslist_info, keywords)
-        print("Filtered News:", filtered_news)  # 檢查過濾後的新聞
-        print(f'搜尋結果 > 符合條件的新聞總數：{len(filtered_news)}')
+    if latest_news:
+        filtered_news = cnyes_news_spider.filter_news(latest_news, keywords)
+        print(f"Filtered Latest News: {filtered_news}")  # 檢查過濾後的最新新聞
+        print(f'搜尋結果 > 符合條件的最新新聞總數：{len(filtered_news)}')
 
         # 構建新聞列表消息
-        news_list_text = "最新新聞：\n\n"
-        for index, news in enumerate(filtered_news[:10], 1):  # 只顯示最多10條新聞
+        news_list_text = "最新新聞:\n\n"
+        for index, news in enumerate(filtered_news, 1):
             news_list_text += f"{index}. {news['title']}\n"
-            news_list_text += f"   連結：https://news.cnyes.com/news/id/{news['newsId']}\n\n"
+            news_list_text += f"   連結: https://news.cnyes.com/news/id/{news['newsId']}\n\n"
 
-        message = TextSendMessage(text=news_list_text.strip())
-        return message
-    return None
+        if filtered_news:
+            message = TextSendMessage(text=news_list_text.strip())
+        else:
+            message = TextSendMessage(text="最新新聞中沒有找到相關內容。")
+    else:
+        message = TextSendMessage(text="無法獲取最新新聞，請稍後再試。")
+    
+    return message
